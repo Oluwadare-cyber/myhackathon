@@ -1,0 +1,368 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:transparent;color:var(--color-text-primary);font-size:14px}
+.top-bar{background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:13px;font-weight:500;color:var(--color-text-secondary);letter-spacing:.05em}
+.logo span{color:#E8593C;font-weight:500}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#3B8BD4;display:inline-block;margin-right:6px}
+.status-dot.red{background:#E24B4A;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.section{padding:16px}
+.section+.section{border-top:0.5px solid var(--color-border-tertiary)}
+.label{font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:500}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.metric-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;border:0.5px solid var(--color-border-tertiary)}
+.metric-card .val{font-size:22px;font-weight:500;margin:2px 0}
+.metric-card .sub{font-size:11px;color:var(--color-text-secondary)}
+.metric-card.alert{border-color:#E24B4A44;background:var(--color-background-danger)}
+.metric-card.warn{border-color:#EF9F2744;background:var(--color-background-warning)}
+.risk-bar-wrap{margin:4px 0 12px}
+.risk-bar-bg{height:6px;background:var(--color-border-tertiary);border-radius:3px;overflow:hidden}
+.risk-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.events-table{width:100%;border-collapse:collapse;font-size:12px}
+.events-table th{text-align:left;color:var(--color-text-secondary);font-weight:500;padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.events-table td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.events-table tr:last-child td{border-bottom:none}
+.events-table tr:hover td{background:var(--color-background-secondary)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.badge.crit{background:var(--color-background-danger);color:var(--color-text-danger)}
+.badge.high{background:var(--color-background-warning);color:var(--color-text-warning)}
+.badge.med{background:var(--color-background-info);color:var(--color-text-info)}
+.badge.low{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-box{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px}
+.bar-chart{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.bar-item{display:flex;align-items:center;gap:8px;font-size:11px}
+.bar-item .name{width:80px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-item .bar{flex:1;height:14px;background:var(--color-border-tertiary);border-radius:3px;overflow:hidden}
+.bar-item .fill{height:100%;border-radius:3px}
+.bar-item .count{width:28px;text-align:right;font-variant-numeric:tabular-nums}
+.timeline{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.tl-item{display:flex;gap:10px;align-items:flex-start;font-size:12px}
+.tl-dot{width:8px;height:8px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.tl-time{color:var(--color-text-secondary);font-size:11px;white-space:nowrap;min-width:50px;font-variant-numeric:tabular-nums}
+.tl-text{color:var(--color-text-primary);line-height:1.4}
+.splunk-query{background:#181C20;border-radius:var(--border-radius-md);padding:10px 14px;font-family:var(--font-mono);font-size:11px;color:#9EB6D4;margin-top:8px;border:0.5px solid #2a3040;overflow-x:auto}
+.splunk-query .kw{color:#C792EA}.splunk-query .fn{color:#FFCB6B}.splunk-query .op{color:#89DDFF}.splunk-query .val{color:#C3E88D}
+.tabs{display:flex;gap:2px;margin-bottom:12px}
+.tab{padding:5px 12px;border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-text-secondary);border:0.5px solid transparent;transition:all .15s}
+.tab.active{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-secondary)}
+.tab:hover:not(.active){background:var(--color-background-secondary)}
+.pane{display:none}.pane.active{display:block}
+.user-risk{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.user-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);cursor:pointer}
+.user-row:hover{border-color:var(--color-border-secondary)}
+.user-row.selected{border-color:#E24B4A55;background:var(--color-background-danger)}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.user-name{font-size:12px;font-weight:500;flex:1}
+.risk-score{font-size:13px;font-weight:500}
+.risk-score.crit{color:var(--color-text-danger)}
+.risk-score.high{color:var(--color-text-warning)}
+.risk-score.med{color:var(--color-text-info)}
+.mini-bar-wrap{width:60px}
+.mini-bar{height:5px;border-radius:2px}
+.detail-pane{margin-top:12px;padding:12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);display:none}
+.detail-pane.show{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.detail-item .dk{font-size:11px;color:var(--color-text-secondary)}
+.detail-item .dv{font-size:13px;font-weight:500}
+.sim-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.sim-btn{padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);transition:all .15s}
+.sim-btn:hover{background:var(--color-background-secondary)}
+.sim-btn.active{background:#E8593C1A;border-color:#E8593C88;color:#E8593C}
+.log-stream{font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);background:#0D1117;border-radius:var(--border-radius-md);padding:10px 12px;height:180px;overflow-y:auto;border:0.5px solid #2a3040}
+.log-line{padding:1px 0;line-height:1.5}
+.log-line .ts{color:#4a5568}.log-line .src{color:#FFCB6B}.log-line .msg{color:#9EB6D4}.log-line.alert .msg{color:#E24B4A}
+.log-line.warn .msg{color:#EF9F27}
+.alert-banner{background:var(--color-background-danger);border:0.5px solid var(--color-border-danger);border-radius:var(--border-radius-md);padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.alert-banner .icon{color:var(--color-text-danger);font-size:14px;font-weight:500}
+.alert-banner .text{font-size:12px;color:var(--color-text-danger)}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo"><span>SPLUNK</span> SIEM &nbsp;|&nbsp; Insider Threat Lab v1.0</div>
+  <div style="display:flex;align-items:center;gap:16px;font-size:12px">
+    <span><span class="status-dot red"></span><span style="color:var(--color-text-danger);font-weight:500">2 Active Incidents</span></span>
+    <span style="color:var(--color-text-secondary)">Index: all &nbsp;|&nbsp; Last 24h</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="metrics">
+    <div class="metric-card alert">
+      <div class="sub">Risk Score (Max)</div>
+      <div class="val" style="color:var(--color-text-danger)">94</div>
+      <div class="sub">jsmith@corp.local</div>
+    </div>
+    <div class="metric-card warn">
+      <div class="sub">Exfil Events (24h)</div>
+      <div class="val" style="color:var(--color-text-warning)">47</div>
+      <div class="sub">↑ 312% vs baseline</div>
+    </div>
+    <div class="metric-card">
+      <div class="sub">Off-Hours Access</div>
+      <div class="val">23</div>
+      <div class="sub">Events 00:00–06:00</div>
+    </div>
+    <div class="metric-card">
+      <div class="sub">DLP Triggers</div>
+      <div class="val">11</div>
+      <div class="sub">3 USB, 5 cloud, 3 email</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('events')">Event Log</div>
+    <div class="tab" onclick="switchTab('users')">User Risk Scores</div>
+    <div class="tab" onclick="switchTab('simulate')">Simulate Attack</div>
+    <div class="tab" onclick="switchTab('queries')">Splunk Queries</div>
+  </div>
+
+  <!-- EVENTS PANE -->
+  <div class="pane active" id="pane-events">
+    <div class="alert-banner">
+      <span class="icon">&#9888;</span>
+      <span class="text"><strong>CRITICAL</strong> — jsmith bulk-copied 2.3 GB to USB at 02:14 UTC. Splunk alert fired: rule DLP-USB-BULK-001.</span>
+    </div>
+    <div class="chart-row" style="margin-bottom:14px">
+      <div class="chart-box">
+        <div class="label">Exfil channels (24h)</div>
+        <div class="bar-chart">
+          <div class="bar-item"><span class="name">USB drive</span><div class="bar"><div class="fill" style="width:72%;background:#E24B4A"></div></div><span class="count">34</span></div>
+          <div class="bar-item"><span class="name">Dropbox</span><div class="bar"><div class="fill" style="width:42%;background:#EF9F27"></div></div><span class="count">20</span></div>
+          <div class="bar-item"><span class="name">Email attach</span><div class="bar"><div class="fill" style="width:29%;background:#EF9F27"></div></div><span class="count">14</span></div>
+          <div class="bar-item"><span class="name">Pastebin</span><div class="bar"><div class="fill" style="width:13%;background:#3B8BD4"></div></div><span class="count">6</span></div>
+          <div class="bar-item"><span class="name">SCP/SFTP</span><div class="bar"><div class="fill" style="width:8%;background:#3B8BD4"></div></div><span class="count">4</span></div>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="label">Kill chain stage</div>
+        <div class="bar-chart">
+          <div class="bar-item"><span class="name">Recon</span><div class="bar"><div class="fill" style="width:35%;background:#534AB7"></div></div><span class="count">17</span></div>
+          <div class="bar-item"><span class="name">Collection</span><div class="bar"><div class="fill" style="width:80%;background:#E24B4A"></div></div><span class="count">38</span></div>
+          <div class="bar-item"><span class="name">Staging</span><div class="bar"><div class="fill" style="width:50%;background:#EF9F27"></div></div><span class="count">24</span></div>
+          <div class="bar-item"><span class="name">Exfiltration</span><div class="bar"><div class="fill" style="width:65%;background:#E24B4A"></div></div><span class="count">31</span></div>
+          <div class="bar-item"><span class="name">Cover tracks</span><div class="bar"><div class="fill" style="width:20%;background:#534AB7"></div></div><span class="count">9</span></div>
+        </div>
+      </div>
+    </div>
+    <table class="events-table">
+      <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Data / Dest</th><th>Severity</th></tr></thead>
+      <tbody id="events-body"></tbody>
+    </table>
+  </div>
+
+  <!-- USERS PANE -->
+  <div class="pane" id="pane-users">
+    <div class="label">Top risky users — composite risk score (access anomaly + volume + time-of-day)</div>
+    <div class="user-risk" id="user-list"></div>
+    <div class="detail-pane" id="user-detail">
+      <div class="label" id="detail-user-name">User detail</div>
+      <div class="detail-grid" id="detail-grid"></div>
+      <div style="margin-top:12px">
+        <div class="label">Recent indicators</div>
+        <div class="timeline" id="detail-timeline"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMULATE PANE -->
+  <div class="pane" id="pane-simulate">
+    <div class="label">Scenario simulator — trigger events and watch alerts fire in the log</div>
+    <div class="sim-controls">
+      <button class="sim-btn" onclick="runSim('usb')">USB Bulk Copy</button>
+      <button class="sim-btn" onclick="runSim('email')">Email Exfil</button>
+      <button class="sim-btn" onclick="runSim('cloud')">Cloud Upload</button>
+      <button class="sim-btn" onclick="runSim('offhours')">Off-Hours Access</button>
+      <button class="sim-btn" onclick="runSim('recon')">File Recon</button>
+      <button class="sim-btn" onclick="runSim('logclear')">Log Tampering</button>
+    </div>
+    <div class="log-stream" id="log-stream">
+      <div class="log-line"><span class="ts">[ready] </span><span class="msg">Simulator online. Select a scenario above to inject events.</span></div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="label">MITRE ATT&CK mapping</div>
+      <table class="events-table" style="margin-top:4px">
+        <thead><tr><th>Scenario</th><th>Tactic</th><th>Technique ID</th><th>Detection Rule</th></tr></thead>
+        <tbody>
+          <tr><td>USB Bulk Copy</td><td>Exfiltration</td><td>T1052.001</td><td>DLP-USB-BULK-001</td></tr>
+          <tr><td>Email Exfil</td><td>Exfiltration</td><td>T1048.003</td><td>DLP-EMAIL-ATTACH-002</td></tr>
+          <tr><td>Cloud Upload</td><td>Exfiltration</td><td>T1567.002</td><td>DLP-CLOUD-UPLOAD-003</td></tr>
+          <tr><td>Off-Hours Access</td><td>Collection</td><td>T1213</td><td>BEHAV-OFFHOURS-001</td></tr>
+          <tr><td>File Recon</td><td>Discovery</td><td>T1083</td><td>BEHAV-FILE-ENUM-001</td></tr>
+          <tr><td>Log Tampering</td><td>Defense Evasion</td><td>T1070.001</td><td>ANTI-FORENSIC-001</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- QUERIES PANE -->
+  <div class="pane" id="pane-queries">
+    <div class="label">Splunk SPL queries for detection</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:4px">1. Bulk USB copy — volume anomaly (&gt;500 MB in session)</div>
+        <div class="splunk-query"><span class="kw">index</span>=endpoint <span class="kw">sourcetype</span>=<span class="val">wineventlog</span> EventCode=<span class="val">4663</span> Object_Type=<span class="val">"File"</span><br>| <span class="fn">eval</span> mb = round(size_bytes / <span class="val">1048576</span>, <span class="val">2</span>)<br>| <span class="fn">stats</span> sum(mb) <span class="kw">as</span> total_mb by user, drive_letter, _time<br>| <span class="fn">where</span> total_mb <span class="op">></span> <span class="val">500</span> <span class="op">AND</span> match(drive_letter, <span class="val">"[D-Z]:"</span>)<br>| <span class="fn">eval</span> severity=<span class="val">"CRITICAL"</span><br>| <span class="fn">table</span> _time, user, drive_letter, total_mb, severity</div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:4px">2. Off-hours file access scoring</div>
+        <div class="splunk-query"><span class="kw">index</span>=endpoint <span class="kw">sourcetype</span>=<span class="val">wineventlog</span> EventCode IN (<span class="val">4663</span>,<span class="val">4656</span>)<br>| <span class="fn">eval</span> hour = strftime(_time, <span class="val">"%H"</span>)<br>| <span class="fn">where</span> (hour <span class="op">>=</span> <span class="val">"00"</span> <span class="op">AND</span> hour <span class="op"><=</span> <span class="val">"06"</span>) <span class="op">OR</span> hour <span class="op">>=</span> <span class="val">"22"</span><br>| <span class="fn">stats</span> count <span class="kw">as</span> offhours_events by user<br>| <span class="fn">where</span> offhours_events <span class="op">></span> <span class="val">5</span><br>| <span class="fn">eval</span> risk_score = offhours_events * <span class="val">3</span><br>| <span class="fn">sort</span> -risk_score</div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:4px">3. Email attachment exfiltration (DLP)</div>
+        <div class="splunk-query"><span class="kw">index</span>=email_gateway <span class="kw">sourcetype</span>=<span class="val">exchange_dlp</span><br>| <span class="fn">where</span> isnotnull(attachment_size_kb) <span class="op">AND</span> dest_domain <span class="op">!=</span> <span class="val">"corp.local"</span><br>| <span class="fn">eval</span> mb = round(attachment_size_kb/<span class="val">1024</span>,<span class="val">1</span>)<br>| <span class="fn">stats</span> sum(mb) <span class="kw">as</span> total_mb, dc(dest_email) <span class="kw">as</span> uniq_dest by user<br>| <span class="fn">where</span> total_mb <span class="op">></span> <span class="val">50</span> <span class="op">OR</span> uniq_dest <span class="op">></span> <span class="val">10</span><br>| <span class="fn">table</span> user, total_mb, uniq_dest</div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:4px">4. Composite insider threat risk score</div>
+        <div class="splunk-query"><span class="fn">| multisearch</span><br>&nbsp;&nbsp;[ <span class="kw">search</span> <span class="kw">index</span>=endpoint EventCode=<span class="val">4663</span> | <span class="fn">stats</span> count <span class="kw">as</span> file_events by user ]<br>&nbsp;&nbsp;[ <span class="kw">search</span> <span class="kw">index</span>=dlp | <span class="fn">stats</span> count <span class="kw">as</span> dlp_events by user ]<br>&nbsp;&nbsp;[ <span class="kw">search</span> <span class="kw">index</span>=email offhours=<span class="val">true</span> | <span class="fn">stats</span> count <span class="kw">as</span> offhours by user ]<br>| <span class="fn">stats</span> sum(file_events) <span class="kw">as</span> fe, sum(dlp_events) <span class="kw">as</span> de, sum(offhours) <span class="kw">as</span> oh by user<br>| <span class="fn">eval</span> risk = (fe*<span class="val">0.3</span>) + (de*<span class="val">5</span>) + (oh*<span class="val">3</span>)<br>| <span class="fn">sort</span> -risk | <span class="fn">head</span> <span class="val">10</span></div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:4px">5. Log tampering / event log cleared</div>
+        <div class="splunk-query"><span class="kw">index</span>=wineventlog (EventCode=<span class="val">1102</span> <span class="op">OR</span> EventCode=<span class="val">104</span>)<br>| <span class="fn">eval</span> action=<span class="fn">if</span>(EventCode=<span class="val">1102</span>, <span class="val">"Security log cleared"</span>, <span class="val">"System log cleared"</span>)<br>| <span class="fn">table</span> _time, host, user, action<br>| <span class="fn">eval</span> severity=<span class="val">"CRITICAL"</span><br>| <span class="fn">sendalert</span> <span class="val">"SOC-ALERT"</span> param.urgency=<span class="val">critical</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const eventsData=[
+  {time:"02:14:33",user:"jsmith",action:"USB bulk copy",data:"2.3 GB → KINGSTON USB",sev:"crit"},
+  {time:"02:08:10",user:"jsmith",action:"Mass file open",data:"198 files in /finance/",sev:"high"},
+  {time:"01:59:44",user:"jsmith",action:"Off-hours login",data:"Workstation WS-042",sev:"high"},
+  {time:"23:41:02",user:"alopez",action:"Cloud upload",data:"312 MB → Dropbox",sev:"high"},
+  {time:"23:35:18",user:"alopez",action:"ZIP archive created",data:"Q4_projections_FINAL.zip",sev:"med"},
+  {time:"22:10:55",user:"jsmith",action:"Email attachment",data:"45 MB → gmail.com",sev:"high"},
+  {time:"20:04:33",user:"bchang",action:"Sensitive file copy",data:"/hr/payroll/ → Desktop",sev:"med"},
+  {time:"18:22:11",user:"alopez",action:"Pastebin POST",data:"API key content 4.1 KB",sev:"med"},
+  {time:"15:44:07",user:"jsmith",action:"Dir enumeration",data:"ls -R /shared/ip/",sev:"low"},
+  {time:"14:02:59",user:"rbrown",action:"Print to PDF",data:"40-page contract doc",sev:"low"},
+];
+
+const tbody=document.getElementById('events-body');
+eventsData.forEach(e=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="color:var(--color-text-secondary);font-variant-numeric:tabular-nums;font-size:11px">${e.time}</td><td style="font-weight:500">${e.user}</td><td>${e.action}</td><td style="color:var(--color-text-secondary)">${e.data}</td><td><span class="badge ${e.sev}">${e.sev.toUpperCase()}</span></td>`;
+  tbody.appendChild(tr);
+});
+
+const users=[
+  {name:"jsmith",full:"John Smith",dept:"Finance",risk:94,level:"crit",color:"#E24B4A",indicators:["Bulk USB copy at 02:14 UTC","198 files opened in 12 min","3 off-hours logins this week","Email to external address (45 MB)"],details:{dept:"Finance",started:"2019",terminating:"Yes (notice given)",access:"Privileged — shared drives, ERP"}},
+  {name:"alopez",full:"Ana Lopez",dept:"Engineering",risk:72,level:"high",color:"#EF9F27",indicators:["312 MB to Dropbox after hours","Created ZIP of project files","Pastebin POST with code snippet","Dir enumeration on shared drive"],details:{dept:"Engineering",started:"2021",terminating:"No",access:"Standard — codebase, Jira"}},
+  {name:"bchang",full:"Bob Chang",dept:"HR",risk:38,level:"med",color:"#3B8BD4",indicators:["Payroll folder copy to Desktop","Printed 12 sensitive docs this week","Accessed 3 peer salary files"],details:{dept:"HR",started:"2020",terminating:"No",access:"Standard — HRIS, restricted payroll"}},
+  {name:"rbrown",full:"Rachel Brown",dept:"Legal",risk:14,level:"low",color:"#888780",indicators:["Printed contract PDF (normal workflow)"],details:{dept:"Legal",started:"2018",terminating:"No",access:"Standard — legal docs, contracts"}},
+];
+
+const ul=document.getElementById('user-list');
+users.forEach((u,i)=>{
+  const initials=u.full.split(' ').map(x=>x[0]).join('');
+  const pct=u.risk;
+  const row=document.createElement('div');
+  row.className='user-row';
+  row.id='user-row-'+i;
+  row.innerHTML=`
+    <div class="avatar" style="background:${u.color}22;color:${u.color}">${initials}</div>
+    <div class="user-name">${u.full}<br><span style="font-size:11px;color:var(--color-text-secondary);font-weight:400">${u.dept}</span></div>
+    <div class="mini-bar-wrap"><div class="risk-bar-bg"><div class="mini-bar" style="width:${pct}%;background:${u.color}"></div></div></div>
+    <div class="risk-score ${u.level}">${u.risk}</div>
+  `;
+  row.onclick=()=>showUserDetail(i);
+  ul.appendChild(row);
+});
+
+function showUserDetail(i){
+  document.querySelectorAll('.user-row').forEach(r=>r.classList.remove('selected'));
+  document.getElementById('user-row-'+i).classList.add('selected');
+  const u=users[i];
+  const dp=document.getElementById('user-detail');
+  document.getElementById('detail-user-name').textContent=u.full+' — Risk Score: '+u.risk;
+  const dg=document.getElementById('detail-grid');
+  dg.innerHTML=Object.entries(u.details).map(([k,v])=>`<div class="detail-item"><div class="dk">${k.charAt(0).toUpperCase()+k.slice(1)}</div><div class="dv">${v}</div></div>`).join('');
+  const dt=document.getElementById('detail-timeline');
+  dt.innerHTML=u.indicators.map((ind,j)=>`<div class="tl-item"><div class="tl-dot" style="background:${u.color}"></div><div class="tl-text">${ind}</div></div>`).join('');
+  dp.classList.add('show');
+}
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+const simScenarios={
+  usb:{lines:[
+    {cls:'',msg:'[endpoint] WS-042 — USB device KINGSTON (vid:0951) inserted by jsmith'},
+    {cls:'warn',msg:'[dlp] File copy initiated: /shared/finance/ → D:\\ (estimated 2.3 GB)'},
+    {cls:'alert',msg:'[ALERT] DLP-USB-BULK-001 fired — user=jsmith, volume=2354 MB, drive=D:\\'},
+    {cls:'alert',msg:'[INCIDENT] Auto-created: INC-20241115-047 | Severity: CRITICAL | Assigned: SOC-T2'},
+  ]},
+  email:{lines:[
+    {cls:'',msg:'[exchange] jsmith@corp.local → personal@gmail.com, attach: Q4_forecast.xlsx (44.8 MB)'},
+    {cls:'warn',msg:'[dlp] External destination detected. Attachment fingerprint matched: FINANCIAL-DATA-CLASS'},
+    {cls:'alert',msg:'[ALERT] DLP-EMAIL-ATTACH-002 fired — user=jsmith, dest=gmail.com, size=45890 KB'},
+    {cls:'',msg:'[exchange] Message held in quarantine pending DLP review'},
+  ]},
+  cloud:{lines:[
+    {cls:'',msg:'[proxy] alopez — POST https://content.dropboxapi.com/2/files/upload'},
+    {cls:'warn',msg:'[proxy] Upload in progress: 312 MB to Dropbox, Content-Type: application/octet-stream'},
+    {cls:'alert',msg:'[ALERT] DLP-CLOUD-UPLOAD-003 fired — user=alopez, dest=dropboxapi.com, size=312 MB'},
+    {cls:'warn',msg:'[ueba] Anomaly: 4.2x above alopez 30-day upload baseline'},
+  ]},
+  offhours:{lines:[
+    {cls:'',msg:'[auth] jsmith authenticated to WS-042 at 01:59:44 UTC (Sunday)'},
+    {cls:'warn',msg:'[ueba] Off-hours login detected: hour=01, day=Sunday, baseline=0 events'},
+    {cls:'warn',msg:'[endpoint] 198 file open events on /finance/ in 720 seconds'},
+    {cls:'alert',msg:'[ALERT] BEHAV-OFFHOURS-001 fired — user=jsmith, events=198, window=12min'},
+  ]},
+  recon:{lines:[
+    {cls:'',msg:'[endpoint] jsmith — cmd.exe: dir /s /b C:\\Users\\shared\\ip\\ > tmp.txt'},
+    {cls:'warn',msg:'[endpoint] 1,247 file enumeration events in 8 seconds (find/dir sweep)'},
+    {cls:'alert',msg:'[ALERT] BEHAV-FILE-ENUM-001 fired — user=jsmith, path=/shared/ip/, count=1247'},
+    {cls:'',msg:'[endpoint] Process tree: cmd.exe → robocopy.exe (staged for copy)'},
+  ]},
+  logclear:{lines:[
+    {cls:'warn',msg:'[winevent] EventCode=1102 — Security audit log cleared on WS-042'},
+    {cls:'alert',msg:'[ALERT] ANTI-FORENSIC-001 fired — EventCode=1102, host=WS-042, user=jsmith'},
+    {cls:'alert',msg:'[ALERT] CRITICAL: Log gap detected. Gap from 01:58 to 02:19 UTC on WS-042'},
+    {cls:'alert',msg:'[INCIDENT] INC-20241115-048 | Anti-forensics activity | Escalated to IR team'},
+  ]},
+};
+
+let logTimer=null;
+function runSim(type){
+  document.querySelectorAll('.sim-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  const stream=document.getElementById('log-stream');
+  const lines=simScenarios[type].lines;
+  stream.innerHTML='';
+  let i=0;
+  if(logTimer)clearInterval(logTimer);
+  logTimer=setInterval(()=>{
+    if(i>=lines.length){clearInterval(logTimer);return;}
+    const l=lines[i];
+    const d=document.createElement('div');
+    d.className='log-line '+(l.cls||'');
+    const now=new Date();
+    const ts=now.toISOString().substr(11,8);
+    d.innerHTML=`<span class="ts">[${ts}] </span><span class="msg">${l.msg}</span>`;
+    stream.appendChild(d);
+    stream.scrollTop=stream.scrollHeight;
+    i++;
+  },600);
+}
+</script>
+</body>
+</html>
